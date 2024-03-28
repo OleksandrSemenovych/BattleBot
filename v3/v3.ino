@@ -90,7 +90,7 @@ if(!raceStarted && distance > 23){
       } 
       else{
         findLine();
-      }
+        }
       }
     }
 }
