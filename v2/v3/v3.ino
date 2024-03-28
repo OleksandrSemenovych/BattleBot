@@ -16,6 +16,7 @@ bool isAttempingToGetOntTrack = false;
 bool raceStarted = false;
 bool isLeft = false;
 bool isRight = false;
+bool isGettingOnLine = false;
 
 #define BLACK 900 // defines the threshold of when we say the colour sensor senses the colour black
 
@@ -55,33 +56,43 @@ void loop() {
   //because the signal has travelled to the target and back, 
   //so the distance is the total round-trip distance
 
-if(!raceStarted && distance > 23 && distance < 27){
+if(!raceStarted && distance > 23){
     isAttempingToGetOntTrack = true;
     raceStarted = true;
     moveForward();
     delay(800);
     moveGripper(80);
-  } else if (isAttempingToGetOntTrack){
+  } 
+  else if (isAttempingToGetOntTrack){
     if(sensorValues[0] < BLACK || sensorValues[1] < BLACK){
       isAttempingToGetOntTrack = false;
     } else{
       turnAround();
     }
-  }else if(raceStarted){
-    if(sensorValues[3] > BLACK || sensorValues[4] > BLACK){
-      moveForward();
-    } else if(sensorValues[0] > BLACK || sensorValues[1] > BLACK || sensorValues[2] > BLACK){
-      moveRight();
-      isRight = true;
-      isLeft = false;
-    } else if(sensorValues[7] > BLACK || sensorValues[6] > BLACK || sensorValues[5] > BLACK){
-      moveLeft();
-      isLeft = true;
-      isRight = false;
-    } else{
-      findLine();
-    }
   }
+  else if(raceStarted){
+    if (distance < 15){
+      avoidObject();
+    }
+    else{
+      if(sensorValues[3] > BLACK || sensorValues[4] > BLACK){
+        moveForward();
+      } 
+      else if(sensorValues[0] > BLACK || sensorValues[1] > BLACK || sensorValues[2] > BLACK){
+        moveRight();
+        isRight = true;
+        isLeft = false;
+      } 
+      else if(sensorValues[7] > BLACK || sensorValues[6] > BLACK || sensorValues[5] > BLACK){
+        moveLeft();
+        isLeft = true;
+        isRight = false;
+      } 
+      else{
+        findLine();
+      }
+      }
+    }
 }
 
 //Activated the gripper
@@ -140,4 +151,22 @@ void turnAround() {
   analogWrite (motorPin2, 170);
   analogWrite (motorPin3, 130);
   digitalWrite(motorPin4, LOW);
+}
+
+void avoidObject() {
+  moveRight();
+  delay (500);
+  moveForward();
+  delay (1000);
+  moveLeft();
+  delay (1000);
+  moveForward();
+  delay (1000);
+  moveLeft();
+  delay (1000);
+  while ((sensorValues[2] == 0) || (sensorValues[3] == 0) || (sensorValues[4] == 0) || (sensorValues[5] == 0)){
+    moveForward ();
+  }
+  moveRight();
+  delay (300);
 }
