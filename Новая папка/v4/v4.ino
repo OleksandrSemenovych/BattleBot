@@ -63,28 +63,21 @@ if(!raceStarted && distance > 23){
     moveForward();
     delay(800);
     moveGripper(80);
-    moveLeft();
-    delay(500);
   } 
   else if (isAttempingToGetOntTrack){
     if(sensorValues[0] < BLACK || sensorValues[1] < BLACK || (sensorValues[0] < BLACK && sensorValues[1] < BLACK)){
       isAttempingToGetOntTrack = false;
+      
     } else{
       turnAround();
     }
   }
   
-  else if(isEndPart && (sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK)){
+  else if(isEndPart && sensorValues[1] > BLACK && sensorValues[2] > BLACK && sensorValues[3] > BLACK && sensorValues[4] > BLACK && sensorValues[5] > BLACK && sensorValues[6] > BLACK && sensorValues[7] > BLACK){
         moveForward();
-        delay(100); //calibrate this
-        if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
-           delay(100); //calibrate this
-            if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
-                finish();
-            }
-            else{
-                moveForward();
-              } 
+        delay(200); //calibrate this
+        if (isEndPart && sensorValues[1] > BLACK && sensorValues[2] > BLACK && sensorValues[3] > BLACK && sensorValues[4] > BLACK && sensorValues[5] > BLACK && sensorValues[6] > BLACK && sensorValues[7] > BLACK){
+           finish();
           }
           else{
               moveForward();
@@ -93,8 +86,8 @@ if(!raceStarted && distance > 23){
   else if(raceStarted){
     if (distance < 15){
       avoidObject();
-      stopRobot();
-      delay(1000);
+      delay(20);
+      isEndPart = true;
     }
     else{
       if(sensorValues[3] > BLACK || sensorValues[4] > BLACK){
@@ -176,7 +169,6 @@ void turnAround() {
 }
 
 void avoidObject() {
-  isEndPart = false;
   moveRight();
   delay (500);
   moveForward();
@@ -186,14 +178,12 @@ void avoidObject() {
   moveForward();
   delay (500);
   moveLeft();
-  delay (600);
-  isEndPart = true;
+  delay (700);
+  moveForward();
+  delay (200);
 }
 
 void finish (){
-  moveBackwards();
-  delay(300);
-  stopRobot();
   moveGripper(140);
   moveBackwards();
   delay(5000);

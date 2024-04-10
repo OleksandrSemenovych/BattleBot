@@ -35,11 +35,15 @@ void setup() {
   }
 }
 
-void loop() {
-  // Read sensor values
+void readSensors(){
   for (int i = 0; i < sensorCount; ++i) {
     sensorValues[i] = analogRead(sensorPins[i]);
   }
+  }
+
+void loop() {
+  // Read sensor values
+  readSensors();
 
   // Triggering the sensor
   digitalWrite(trigPin, LOW);
@@ -77,8 +81,10 @@ if(!raceStarted && distance > 23){
   else if(isEndPart && (sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK)){
         moveForward();
         delay(100); //calibrate this
+        readSensors();
         if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
            delay(100); //calibrate this
+           readSensors();
             if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
                 finish();
             }
@@ -188,15 +194,25 @@ void avoidObject() {
   moveLeft();
   delay (600);
   isEndPart = true;
+  while (sensorValues[7] > BLACK || sensorValues[6] > BLACK){
+      moveForward();
+      readSensors();
+    }
+    stopRobot();
+    delay (1000);
+    moveRight();
+    delay (300);
+    isRight = true;
+    isLeft = false;
 }
 
 void finish (){
   moveBackwards();
-  delay(300);
+  delay(250);
   stopRobot();
   moveGripper(140);
   moveBackwards();
-  delay(5000);
+  delay(2500);
   while (true){
     moveLeft();
   }
