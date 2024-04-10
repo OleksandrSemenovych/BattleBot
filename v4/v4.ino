@@ -3,8 +3,11 @@ const int motorPin2 = 11;   // Motor 1 control pin
 const int motorPin3 = 6;   // Motor 2 control pin
 const int motorPin4 = 5;   // Motor 2 control pin
 
-const int trigPin = 4; // Connect Trig to digital pin 2
-const int echoPin = 2; // Connect Echo to digital pin 7
+#define ROTATION_SENSOR_LEFT 3  //R1 - 2 - left wheel - red
+#define ROTATION_SENSOR_RIGHT 2 //R2 - 3 - right wheel - red
+
+const int trigPin = 4; 
+const int echoPin = 7;
 
 const int servoPin = 9; // Servo control pin
 
@@ -12,12 +15,22 @@ const int sensorCount = 8; // Number of sensors in your analog line sensor
 const int sensorPins[sensorCount] = {A0, A1, A2, A3, A4, A5, A6, A7}; // Analog sensor pins
 int sensorValues[sensorCount]; // Array to store sensor values
 
+volatile int countLeft = 0;
+volatile int countRight = 0;
+
+void rotationCountLeft(){
+  countLeft++;
+}
+
+void rotationCountRight(){
+  countRight++;
+}
+
 bool isAttempingToGetOntTrack = false;
 bool raceStarted = false;
 bool isLeft = false;
 bool isRight = false;
 bool isGettingOnLine = false;
-bool isEndPart = false;
 
 #define BLACK 900 // defines the threshold of when we say the colour sensor senses the colour black
 
@@ -29,6 +42,12 @@ void setup() {
 
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
+
+  pinMode(ROTATION_SENSOR_LEFT,INPUT_PULLUP);
+  pinMode(ROTATION_SENSOR_RIGHT,INPUT_PULLUP);
+
+  attachInterrupt(digitalPinToInterrupt(ROTATION_SENSOR_LEFT), rotationCountLeft, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ROTATION_SENSOR_RIGHT), rotationCountRight, CHANGE);
 
   for (int i = 0; i < sensorCount; i++) {
     pinMode(sensorPins[i], INPUT);
@@ -63,38 +82,17 @@ if(!raceStarted && distance > 23){
     moveForward();
     delay(800);
     moveGripper(80);
-    moveLeft();
-    delay(500);
   } 
   else if (isAttempingToGetOntTrack){
-    if(sensorValues[0] < BLACK || sensorValues[1] < BLACK || (sensorValues[0] < BLACK && sensorValues[1] < BLACK)){
+    if(sensorValues[0] < BLACK || sensorValues[1] < BLACK){
       isAttempingToGetOntTrack = false;
     } else{
       turnAround();
     }
   }
-  
-  else if(isEndPart && (sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK)){
-        moveForward();
-        delay(100); //calibrate this
-        if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
-           delay(100); //calibrate this
-            if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
-                finish();
-            }
-            else{
-                moveForward();
-              } 
-          }
-          else{
-              moveForward();
-            } 
-      } 
   else if(raceStarted){
     if (distance < 15){
       avoidObject();
-      stopRobot();
-      delay(1000);
     }
     else{
       if(sensorValues[3] > BLACK || sensorValues[4] > BLACK){
@@ -175,29 +173,66 @@ void turnAround() {
   digitalWrite(motorPin4, LOW);
 }
 
-void avoidObject() {
-  isEndPart = false;
-  moveRight();
-  delay (500);
-  moveForward();
-  delay (500);
-  moveLeft();
-  delay (500);
-  moveForward();
-  delay (500);
-  moveLeft();
-  delay (600);
-  isEndPart = true;
-}
-
-void finish (){
-  moveBackwards();
-  delay(300);
+void avoidObject(){
   stopRobot();
-  moveGripper(140);
-  moveBackwards();
-  delay(5000);
-  while (true){
+  delay(100);
+  
+  countLeft=0;
+  countRight=0;
+
+  while(countRight < 20){
     moveLeft();
+  }
+
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 15 && countRight < 15){
+    moveForward();
+  }
+
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 20){
+    moveRight();
+  }
+
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 20 && countRight < 20){
+    moveForward();
+  }
+  
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 20){
+    moveRight();
+  }
+
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 20 && countRight < 20){
+    moveForward();
+  }
+
+  countLeft=0;
+  countRight=0;
+
+  while(countRight < 20){
+    moveLeft();
+  }
+
+  stopRobot();
+  delay(100);
+
+  countLeft=0;
+  countRight=0;
+
+  while(countLeft < 10 && countRight < 10){
+    moveBackwards();
   }
 }

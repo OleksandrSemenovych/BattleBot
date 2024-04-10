@@ -63,7 +63,6 @@ if(!raceStarted && distance > 23 && distance < 27){
     moveGripper(80);
   } else if (isAttempingToGetOntTrack){
     if(sensorValues[0] < BLACK || sensorValues[1] < BLACK){
-      delay(10);
       isAttempingToGetOntTrack = false;
     } else{
       turnAround();

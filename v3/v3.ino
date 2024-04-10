@@ -64,7 +64,7 @@ if(!raceStarted && distance > 23){
     moveGripper(80);
   } 
   else if (isAttempingToGetOntTrack){
-    if(sensorValues[0] < BLACK && sensorValues[1] < BLACK){
+    if(sensorValues[0] < BLACK || sensorValues[1] < BLACK){
       isAttempingToGetOntTrack = false;
     } else{
       turnAround();
@@ -157,11 +157,16 @@ void avoidObject() {
   moveRight();
   delay (500);
   moveForward();
-  delay (500);
+  delay (1000);
   moveLeft();
-  delay (500);
+  delay (1000);
   moveForward();
-  delay (500);
+  delay (1000);
+  moveLeft();
+  delay (1000);
+  while ((sensorValues[2] == 0) || (sensorValues[3] == 0) || (sensorValues[4] == 0) || (sensorValues[5] == 0)){
+    moveForward ();
+  }
   moveRight();
   delay (300);
 }
