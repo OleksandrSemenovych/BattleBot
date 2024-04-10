@@ -1,3 +1,16 @@
+#include <Adafruit_NeoPixel.h>
+
+#define PIN 13
+#define NUMPIXELS 4
+
+#define LEFT_BACK_LED 0
+#define LEFT_FRONT_LED 3
+
+#define RIGHT_BACK_LED 1
+#define RIGHT_FRONT_LED 2
+
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
 const int motorPin1 = 10;   // Motor 1 control pin
 const int motorPin2 = 11;   // Motor 1 control pin
 const int motorPin3 = 6;   // Motor 2 control pin
@@ -17,6 +30,7 @@ bool raceStarted = false;
 bool isLeft = false;
 bool isRight = false;
 bool isGettingOnLine = false;
+bool isEndPart = false;
 
 #define BLACK 900 // defines the threshold of when we say the colour sensor senses the colour black
 
@@ -29,16 +43,23 @@ void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
 
+  strip.begin();
+  strip.show();
+
   for (int i = 0; i < sensorCount; i++) {
     pinMode(sensorPins[i], INPUT);
   }
 }
 
-void loop() {
-  // Read sensor values
+void readSensors(){
   for (int i = 0; i < sensorCount; ++i) {
     sensorValues[i] = analogRead(sensorPins[i]);
   }
+  }
+
+void loop() {
+  // Read sensor values
+  readSensors();
 
   // Triggering the sensor
   digitalWrite(trigPin, LOW);
@@ -57,22 +78,51 @@ void loop() {
   //so the distance is the total round-trip distance
 
 if(!raceStarted && distance > 23){
+    strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 3, 0));
+    strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 255, 0));
+    strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 3, 0));
+    strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 255, 0));
+
+    strip.show();
     isAttempingToGetOntTrack = true;
     raceStarted = true;
     moveForward();
     delay(800);
     moveGripper(80);
+    moveLeft();
+    delay(500);
   } 
   else if (isAttempingToGetOntTrack){
-    if(sensorValues[0] < BLACK || sensorValues[1] < BLACK){
+    if(sensorValues[0] < BLACK || sensorValues[1] < BLACK || (sensorValues[0] < BLACK && sensorValues[1] < BLACK)){
       isAttempingToGetOntTrack = false;
     } else{
       turnAround();
     }
   }
+
+  else if(isEndPart && (sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK)){
+        moveForward();
+        delay(100); //calibrate this
+        readSensors();
+        if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
+           delay(100); //calibrate this
+           readSensors();
+            if ((sensorValues[1] > BLACK && sensorValues[2] > BLACK) && (sensorValues[3] > BLACK && sensorValues[4] > BLACK) && (sensorValues[5] > BLACK && sensorValues[6] > BLACK) && sensorValues[7] > BLACK){
+                finish();
+            }
+            else{
+                moveForward();
+              } 
+          }
+          else{
+              moveForward();
+            } 
+      } 
   else if(raceStarted){
     if (distance < 15){
       avoidObject();
+      stopRobot();
+      delay(1000);
     }
     else{
       if(sensorValues[3] > BLACK || sensorValues[4] > BLACK){
@@ -118,6 +168,12 @@ void findLine() {
 }
 
 void moveForward() {
+  strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 255, 0));
+
+  strip.show();
   analogWrite (motorPin1, 255);
   digitalWrite(motorPin2, LOW);
   analogWrite (motorPin3, 247);
@@ -132,6 +188,12 @@ void moveBackwards() {
 }
 
 void moveRight() {
+  strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 3, 0));
+  strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 3, 0));
+  strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 255, 0));
+
+  strip.show();
   analogWrite (motorPin1, 200);
   digitalWrite(motorPin2, LOW);
   digitalWrite(motorPin3, LOW);
@@ -139,6 +201,12 @@ void moveRight() {
 }
 
 void moveLeft() {
+  strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 255, 0));
+  strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 3, 0));
+  strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 3, 0));
+
+  strip.show();
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   analogWrite (motorPin3, 200);
@@ -154,19 +222,55 @@ void turnAround() {
 }
 
 void avoidObject() {
+  isEndPart = false;
   moveRight();
   delay (500);
   moveForward();
-  delay (1000);
+  delay (500);
   moveLeft();
-  delay (1000);
+  delay (500);
   moveForward();
-  delay (1000);
+  delay (500);
   moveLeft();
-  delay (1000);
-  while ((sensorValues[2] == 0) || (sensorValues[3] == 0) || (sensorValues[4] == 0) || (sensorValues[5] == 0)){
-    moveForward ();
+  delay (600);
+  isEndPart = true;
+  while (sensorValues[7] > BLACK || sensorValues[6] > BLACK){
+      moveForward();
+      readSensors();
+    }
+    stopRobot();
+    delay (1000);
+    moveRight();
+    delay (300);
+    isRight = true;
+    isLeft = false;
+}
+
+void finish (){
+  moveBackwards();
+  delay(250);
+  stopRobot();
+  moveGripper(140);
+  moveBackwards();
+  delay(2500);
+  while (true){
+      moveLeft();
+
+      strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 255, 0));
+      strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 255, 0));
+      strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 255, 0));
+      strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 255, 0));
+
+      strip.show();
+      delay (300);
+
+      strip.setPixelColor(LEFT_BACK_LED, strip.Color(0, 255, 0));
+      strip.setPixelColor(LEFT_FRONT_LED, strip.Color(0, 255, 0));
+      strip.setPixelColor(RIGHT_BACK_LED, strip.Color(0, 3, 0));
+      strip.setPixelColor(RIGHT_FRONT_LED, strip.Color(0, 3, 0));
+
+      strip.show();
+      moveRight;
+      delay(300);     
   }
-  moveRight();
-  delay (300);
 }
